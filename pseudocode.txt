@@ -1,0 +1,462 @@
+Clase Hardware:
+CLASE ESTÁTICA Hardware:
+    ATRIBUTOS ESTÁTICOS:
+        BOTONES:
+            RED(PTC11);
+            GREEN(PTC10);
+            BLUE(PTC6);
+            YELLOW(PTC5);
+            BLACK(PTC4);
+            BROWN(PTC3);
+            WHITE(PTC0);
+            PURPLE(PTC7);
+        SALIDAS DIGITALES:
+            LED_ON(PTC9);
+
+        ENTRADAS ANALÓGICAS:
+            LUZ(PTB0);
+        SALIDAS PWM:
+            MOTOR(PTB0);
+            LEDLUZ(PTB1);
+        INTERRUPCIONES:     
+            TRAMPA(PTA5);
+            HISTORIAL(PTA4);
+            TIEMPO(PTA12);
+            RENDIR(PTD4);
+        COMUNICACIÓN:
+            I2C I2C_LCD(PTE0,PTE1);
+            TextLCD_I2C LCD(&I2C_LCD, 0x4E, TextLCD::LCD16x2);
+            Serial BT(PTE22, PTE23)
+
+
+
+Clase MasterMind:
+CLASE PÚBLICA MasterMind:
+    ATRIBUTOS PÚBLICOS:
+        STRINGS:
+            dificultadJuego;
+            respuestaCorrecta;
+            respuestaIngresada;
+            historialRespuestas[20];
+        ENTEROS:
+            turnosTotales;
+            turnoActual;
+            tiempoPorTurnos;
+            tiempoTurnoActual;
+        BOOLEANOS:
+            hizoTrampa;
+            ganoJuego;
+            seRindio;
+            enTurno;
+        TIMERS:
+            timerTotal;
+        TICKER:
+            tickerVibrar;
+        TIMEOUT:
+            timeoutTurno;
+        JUGADOR:
+            jugadorNuevo;
+    MÉTODOS PÚBLICOS:
+        MasterMind(STRING dificultad):
+        INICIO CONSTRUCTOR
+            this->dificultadJuego=dificultad;
+            this->hizoTrampa=false;
+            this->ganoJuego=false;
+            this->seRindio=false;
+            this->enTurno=false;
+            this->respuestaIngresada="";
+            this->turnoActual=0;
+            this->tiempoTurnoActual=0;
+            IF(dificultad==”Facil”)
+            INICIO
+                this->turnosTotales=10;
+                this->tiempoPorTurnos=15;
+            FIN
+            ELSE
+            INICIO
+                this->turnosTotales=12;
+                this->tiempoPorTurnos=10;
+            FIN
+            this->historialRespuestas[0]="";
+        FIN CONSTRUCTOR
+        iniciarJuego()
+        INICIO METODO
+            this->timerTotal.start();
+            this->randomizarRespuesta();
+            DO
+            INICIO
+                this->turnoActual++;
+                wait(1);
+                Hardware.LCD CLEAR
+                this->iniciarTurno()
+                IF(this->seRindio==true)
+                INICIO
+                    break;
+                FIN
+                IF(this->ganoJuego=true)
+                INICIO
+                    break;
+                FIN
+            FIN
+            WHILE((this->turnoActual<=turnosTotales)))
+            finalizarJuego();
+        FIN METODO
+        randomizarRespuesta()
+        INICIO METODO
+            int tamano;
+            IF(this->dificultadJuego="Facil")
+            INICIO
+                tamano=4;
+            FIN
+            ELSE
+            INICIO
+                tamano=6;
+            FIN
+            this->respuestaCorrecta="";
+            for(i=0; i<tamano; i++)
+            INICIO
+                DO
+                    INICIO
+                    int bandera=0;
+                    int random=rand()%9;
+                    char letra;
+                    if(random==1)
+                    INICIO
+                        letra="R";
+                    FIN
+                    if(random==2)
+                    INICIO
+                        letra="V";
+                    FIN
+                    if(random==3)
+                    INICIO
+                        letra="A";
+                    FIN
+                    if(random==4)
+                    INICIO
+                        letra="Y";
+                    FIN
+                    if(random==5)
+                    INICIO
+                        letra="N";
+                    FIN
+                    if(random==6)
+                    INICIO
+                        letra="C";
+                    FIN
+                    if(random==7)
+                    INICIO
+                        letra="B";
+                    FIN
+                    if(random==8)
+                    INICIO
+                        letra="M";
+                    FIN
+                    for(int j=0; j<i; j++)
+                    INICIO
+                        if(letra==this->respuestaCorrecta[j])
+                        INICIO
+                            bandera=1;
+                        FIN
+                    FIN
+                FIN
+                WHILE(bandera==1)
+                this->respuestaCorrecta[i]=letra;
+            FIN
+        FIN METODO
+        iniciarTurno()
+        INICIO METODO
+            this->tiempoTurnoActual=0;
+            this->tickerVibrar.attach(&this->vibrarTiempo, 1);
+            hayBlanco=0;
+            hayRojo=0;
+            hayAzul=0;
+            hayVerde=0;
+            hayAmarillo=0;
+            hayMorado=0;
+            hayNegro=0;
+            hayCafe=0;
+            this->enTurno=true;
+            this->timeoutTurno.attach(&this->finalizarTurnoTimeout, this->tiempoPorTurnos);
+            this->respuestaIngresada="";
+            WHILE(this->enTurno==true)
+            INICIO
+                IF(this->seRindio==true)
+                INICIO
+                    break;
+                FIN
+                IF(this->enTurno==false)
+                INICIO
+                    break;
+                FIN
+                ELSE IF(this->respuestaIngresada.length==this->respuestaCorrecta.length)
+                INICIO
+                    this->timeoutTurno.detach();
+                    this->finalizarTurnoJugada();
+                    break;
+                FIN
+                
+                ELSE IF(Hardware.RED.read()==1 && hayRojo==0)
+                INICIO
+                    CONCAT(this->respuestaIngresada(), "R");
+                    hayRojo=1;
+                    Hardware.lcd CLEAR;
+                    Hardware.lcd.printf("%s", this->respuestaIngresada);
+                FIN
+                ELSE IF(Hardware.GREEN.read()==1 && hayVerde==0)
+                INICIO
+                    CONCAT(this->respuestaIngresada(), "V");
+                    hayVerde=1;
+                    Hardware.lcd CLEAR;
+                    Hardware.lcd.printf("%s", this->respuestaIngresada);
+                FIN
+                ELSE IF(Hardware.BLUE.read()==1 && hayAzul==0)
+                INICIO
+                    CONCAT(this->respuestaIngresada(), "A");
+                    hayAzul=1;
+                    Hardware.lcd CLEAR;
+                    Hardware.lcd.printf("%s", this->respuestaIngresada);
+                FIN
+                ELSE IF(Hardware.YELLOW.read()==1 && hayAmarillo==0)
+                INICIO
+                    CONCAT(this->respuestaIngresada(), "Y");
+                    hayAmarillo=1;
+                    Hardware.lcd CLEAR;
+                    Hardware.lcd.printf("%s", this->respuestaIngresada);
+                FIN
+                ELSE IF(Hardware.BLACK.read()==1 && hayNegro==0)
+                INICIO
+                    CONCAT(this->respuestaIngresada(), "N");
+                    hayNegro=1;
+                   Hardware.lcd CLEAR;
+                    Hardware.lcd.printf("%s", this->respuestaIngresada);
+                FIN
+                ELSE IF(Hardware.BROWN.read()==1 && hayCafe==0)
+                INICIO
+                    CONCAT(this->respuestaIngresada(), "C");
+                    hayCafe=1;
+                    Hardware.lcd CLEAR;
+                    Hardware.lcd.printf("%s", this->respuestaIngresada);
+                    
+                FIN
+                ELSE IF(Hardware.WHITE.read()==1 && hayBlanco==0)
+                INICIO
+                    CONCAT(this->respuestaIngresada(), "B");
+                    hayBlanco=1;
+                   Hardware.lcd CLEAR;
+                    Hardware.lcd.printf("%s", this->respuestaIngresada);
+                FIN
+                ELSE IF(Hardware.PURPLE.read()==1 && hayMorado==0)
+                INICIO
+                    CONCAT(this->respuestaIngresada(), "M");
+                    hayMorado=1;
+                    Hardware.lcd CLEAR;
+                    Hardware.lcd.printf("%s", this->respuestaIngresada);
+                FIN
+            FIN
+            this->timeoutTurno.detach();
+            this->tickerVibrar.detach();
+        FIN METODO
+        finalizarTurnoTimeout()
+        INICIO METODO
+            this->enTurno=false;
+        FIN METODO
+        finalizarTurnoJugada()
+        INICIO METODO
+            IF(this->seRindio==true)
+            INICIO
+                return;
+            FIN
+            IF(this->respuestaIngresada.length!=this->respuestaCorrecta.length)
+            INICIO
+                return;
+            FIN
+            this->enTurno=false;
+            ENTERO contadorColor=0;
+            ENTERO contadorPosicion=0;
+            FOR(ENTERO i=0; i<this->respuestaCorrecta.length; i++)
+            INICIO
+                IF(this->respuestaIngresada[i]==this->respuestaCorrecta[i])
+                INICIO
+                    contadorPosicion++;
+                FIN
+                FOR(int j=0; j<this->respuestaCorrecta.length; j++)
+                INICIO
+                    IF(this->respuestaIngresada[i]==this->respuestaCorrecta[j])
+                    INICIO
+                        contadorColor++;
+                    FIN
+                FIN
+            FIN
+            if(contadorPosicion==this->respuestaCorrecta.length)
+            INICIO
+                this->ganoJuego=true;
+                Hardware.LCD.printf("Acertaste todo.\n¡Felicidades!");
+                return;
+            FIN
+            Hardware.LCD.printf("%d Acertos Color.\n%dAcertos Posicion.", contadorColor, contadorPosicion);
+            guardarJugadaEnHistorial();
+        FIN METODO
+        hacerTrampa() 
+        INICIO METODO
+            this->hizoTrampa=true;
+            Hardware.BT.printf("La respuesta es %s.\n", this->respuestaCorrecta);
+        FIN METODO
+        guardarJugadaEnHistorial()
+        INICIO METODO
+            STRING COPY(this->historialRespuestas[this->turnoActual-1],this->respuestaIngresada);
+        FIN METODO
+        verHistorial()
+        INICIO METODO
+            IF(this->historialRespuestas[0].length<2)
+            INICIO
+                Hardware.BT.printf("Tu historial está vacío.\n");
+                return;
+            FIN
+            for(int i=0; i<this->turnoActual;i++)
+            INICIO
+                Hardware.BT.printf("%s\n", this->historialRespuestas[i];)
+            FIN
+        FIN METODO
+        verTiempoTranscurrido()
+        INICIO METODO
+            Hardware.BT.printf("Han transcurrido %d segundos.\n", this->timerTotal.read());
+            Hardware.BT.printf("Vas en el turno %d de %d.\n", this->turnoActual, this->turnosRestantes);
+        FIN METODO
+        rendirJuego()
+        INICIO METODO
+            this->seRindio=true;
+        FIN METODO
+        finalizarJuego()
+        INICIO METODO
+            IF(this->seRindio==true || this->hizoTrampa==true || this->ganoJuego==false)
+            INICIO
+                Hardware.LCD CLEAR;
+                Hardware.LCD.printf("Gracias por jugar.\n");
+                wait(1);
+            FIN
+            ELSE IF(this->ganoJuego==true)
+            INICIO
+                STRING nombre
+                Hardware.LCD CLEAR;
+                Hardware.LCD.printf("Ve tu terminal.\n");
+                Hardware.BT.printf("Dime tu nombre: ");
+                Hardware.BT.scanf("%s", nombre);
+                this->jugador= Jugador(nombre, this->dificultadJuego, (this->turnosTotales-this->turnoActual));
+                this->jugador.insertarJugadorEnLeaderboard();
+                this->jugador.verLeaderboardJugadores();
+            FIN
+        FIN METODO
+        vibrarTiempo()
+        INICIO METODO
+            this->tiempoTurnoActual++;
+            Hardware.MOTOR.write(this->tiempoTurnoActual/15);
+        FIN METODO
+
+
+
+Clase Jugador:
+CLASE PÚBLICA Jugador:
+    ATRIBUTOS PÚBLICOS:
+    STRINGS:
+	    nombreUsuario;
+	    dificultadJuego;
+    ENTEROS:
+	    turnosRestantes;
+    METODOS PÚBLICOS:
+	    Jugador(STRING nombre, STRING dificultad, ENTERO turnosRestantes)
+        INICIO CONSTRUCTOR
+            this->nombreUsuario=nombre;
+            this->dificultadJuego=dificultad;
+            this->turnosRestantes=turnosRestantes;
+        FIN CONSTRUCTOR
+	    insertarJugadorEnLeaderboard()
+        INICIO METODO
+            Archivo=("leaderboards.txt", append);
+            fprintf(Archivo,"NOMBRE: %s, DIFICULTAD: %s, TURNOS RESTANTES: %d\n",this->nombreUsuario, this->dificultadJuego, this->turnosRestantes);
+            fclose(Archivo);
+        FIN METODO
+        verLeaderboardJugadores()
+        INICIO METODO
+            string linea;
+            Archivo=("leaderboards.txt", read);
+            while(fscanf(Archivo, "%s\n", linea))
+            Hardware.BT CLEAR;
+            Hardware.BT.printf("LEADERBOARDS:\n");
+            INICIO
+                Hardware.BT.printf("%s\n", linea);
+            FIN
+            fclose(Archivo);
+        FIN METODO
+
+
+
+
+
+
+MAIN:
+	Ticker tickerIluminacion;
+	MasterMind MasterMindJuego;
+	intro();
+    pedirDificultad();
+    revisarIluminacion();
+FUNCION PRINCIPAL:
+INICIO FUNC
+    Hardware.LED_ON=1;
+	tickerIluminacion LLEVA A &revisarIluminacion CADA 1 SEGUNDO;
+	STRING dificultad;
+	LOOP INFINITO:
+	INICIO
+	intro();
+	ENTERO opcion=0;
+	DO
+	INICIO
+		opcion=Hardware.AZUL.read()
+		IF((opcion)=1)
+		INICIO
+			Hardware.LCD CLEAR;
+			HARDWARE BT CLEAR;
+			Break LOOP;
+		FIN
+	FIN
+	WHILE ((opcion)==0)
+	dificultad=pedirDificultad();
+	MasterMindJuego=MasterMind(dificultad);
+	MasterMindJuego.iniciarJuego();
+    MasterMindJuego.timerTotal.end();
+	FIN
+FIN FUNC
+	intro():
+	INICIO FUNC
+		Hardware.LCD CLEAR;
+		Hardware.BT CLEAR;
+		Hardware.LCD.printf(“MASTERMIND\n¡Presiona azul!”);
+        Hardware.BT.printf(“Bienvenidx a la interfaz por celular de 
+        MASTERMIND.\nEste juego fue creado por Mauricio de Garay y Bernardo Garcia.\nAqui podras ver los resultados de tu historial, trampa, 
+        tiempo y leaderboards.\nAdemás, para ingresar tu usuario si es que ganas de 
+        forma limpia, se hará desde esta terminal.\n”);
+	FIN FUNC
+	pedirDificultad():
+	INICIO FUNC
+		Hardware.LCD.printf(“Azul: facil.\nRojo: dificil.”);
+        Hardware.BT.printf(“Facil:\n\tCombinacion de 4 colores.\n\t10 intentos.\n\t15 segundos por intento.\n”);
+        Hardware.BT.printf(“Dificil:\n\tCombinacion de 6 colores.\n\t12 intentos.\n\tSolamente 10 segundos por intento.\n”);
+        ENTERO opcionAzul=0, opcionRojo=0;
+        DO
+        INICIO
+            opcionAzul=Hardware.AZUL.read();
+            opcionRojo=Hardware.ROJO.read();
+        FIN
+        WHILE ((opcionAzul!=1) && (opcionRojo!=1))
+        HARDWARE.LCD CLEAR
+        HARDWARE.BT CLEAR
+        IF(opcionAzul==1)
+        INICIO
+            RETURN “Facil”
+        FIN
+        RETURN “Dificil”
+	FIN FUNC
+	revisarIluminacion():
+	INICIO FUNC
+		Hardware.LEDLUZ.write((1-(Hardware.LUZ.read()))/0.86);
+	FIN FUNC

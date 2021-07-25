@@ -12,7 +12,6 @@
 #ifndef HARDWARE_H
 #define HARDWARE_H
 #include <string>
-#include "mbed.h"
 #include "TextLCD.h"
 
 using namespace std;
